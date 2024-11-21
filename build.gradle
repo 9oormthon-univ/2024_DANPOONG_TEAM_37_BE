@@ -13,6 +13,11 @@ java {
 	}
 }
 
+jar {
+	archiveBaseName.set("app")  // JAR 파일 기본 이름
+	archiveVersion.set("")      // 버전 제거
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -37,6 +42,7 @@ dependencies {
 	implementation 'mysql:mysql-connector-java:8.0.28'
 	//kakao api 할 때 필요 : Webflux
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
 
 }
 

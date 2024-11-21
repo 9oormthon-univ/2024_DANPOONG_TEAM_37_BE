@@ -49,5 +49,6 @@ jobs:
           USER: ${{ secrets.EC2_USER }}
           PEM_FILE: ec2-key.pem
         run: |
-          scp -i $PEM_FILE build/libs/*.jar $USER@$HOST:~/app.jar
+          scp -i $PEM_FILE build/libs/app.jar $USER@$HOST:~/app.jar
           ssh -i $PEM_FILE $USER@$HOST "bash ~/deploy.sh"
+
