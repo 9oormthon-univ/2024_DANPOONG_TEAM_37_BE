@@ -46,6 +46,9 @@ dependencies {
 	implementation 'mysql:mysql-connector-java:8.0.28'
 	//kakao api 할 때 필요 : Webflux
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	//redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
 
 
 }
