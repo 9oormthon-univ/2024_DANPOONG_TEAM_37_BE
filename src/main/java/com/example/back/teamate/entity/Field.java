@@ -1,5 +1,4 @@
 package com.example.back.teamate.entity;
-
 import com.example.back.teamate.enums.FieldName;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,9 +11,9 @@ import lombok.*;
 public class Field {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long fieldId;
+    private int fieldId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
+    @Column(name="name", nullable = false, unique = true)
     private FieldName fieldName;
 }

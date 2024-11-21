@@ -11,9 +11,21 @@ public enum PositionName {
     PLANNER("기획자"),
     MARKETER("마케터");
 
-    private String message;
-    PositionName(String message) {
-        this.message = message;
+    private String positionDisplayName;
+    PositionName(String positionDisplayName) {
+        this.positionDisplayName = positionDisplayName;
     }
 
+    public String getPositionDisplayName() {
+        return positionDisplayName;
+    }
+
+    public static PositionName fromDatabaseValue(String value) {
+        for (PositionName positionName : PositionName.values()) {
+            if (positionName.name().equalsIgnoreCase(value)) {
+                return positionName;
+            }
+        }
+        throw new IllegalArgumentException("Invalid value for FieldName: " + value);
+    }
 }

@@ -13,8 +13,8 @@ public enum SkillName {
     AWS("AWS"),
     FIGMA("Figma"),
     GIT("Git"),
-    TYPESCIRPT("TypeScript"),
-    KOTILIN("Kotlin"),
+    TYPESCRIPT("TypeScript"),
+    KOTLIN("Kotlin"),
     EXPRESS("Express"),
     PYTHON("Python"),
     FLUTTER("Flutter"),
@@ -27,15 +27,25 @@ public enum SkillName {
     NEXTJS("Nextjs"),
     GO("Go"),
     GRAPHQL("GhaphQL"),
-    KOTLIN("Kotlin"),
     KUBERNETES("Kubernetes"),
     SVELTE("Svelte"),
     JAVASCRIPT("JavaScript");
 
+    private String skillDisplayName;
+    SkillName(String skillDisplayName) {
+        this.skillDisplayName = skillDisplayName;
+    }
 
+    public String getSkillDisplayName() {
+        return skillDisplayName;
+    }
 
-    private String message;
-    SkillName(String message) {
-        this.message = message;
+    public static SkillName fromDatabaseValue(String value) {
+        for (SkillName skillName : SkillName.values()) {
+            if (skillName.name().equalsIgnoreCase(value)) {
+                return skillName;
+            }
+        }
+        throw new IllegalArgumentException("Invalid value for FieldName: " + value);
     }
 }

@@ -5,9 +5,21 @@ public enum MatchStatus {
     ACCEPTED("가입완료"),
     REJECTED("거절됨");
 
-    private final String message;
+    private String matchDisplayName;
+    MatchStatus(String matchDisplayName) {
+        this.matchDisplayName = matchDisplayName;
+    }
 
-    MatchStatus(String message) {
-        this.message = message;
+    public String getMatchDisplayName() {
+        return matchDisplayName;
+    }
+
+    public static MatchStatus fromDatabaseValue(String value) {
+        for (MatchStatus matchStatus : MatchStatus.values()) {
+            if (matchStatus.name().equalsIgnoreCase(value)) {
+                return matchStatus;
+            }
+        }
+        throw new IllegalArgumentException("Invalid value for FieldName: " + value);
     }
 }
