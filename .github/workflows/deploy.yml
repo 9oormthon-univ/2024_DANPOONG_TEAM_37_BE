@@ -42,7 +42,18 @@ jobs:
       - name: Add host to known_hosts
         run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # 8. EC2로 배포
+      # 8. application.yml과 application-local.yml 복사
+      - name: Copy application configuration files to EC2
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+          PEM_FILE: ec2-key.pem
+        run: |
+          scp -i $PEM_FILE src/main/resources/application.yml $USER@$HOST:~/application.yml
+          scp -i $PEM_FILE src/main/resources/application-local.yml $USER@$HOST:~/application-local.yml
+      
+
+      # 9. JAR 파일 배포 및 실행
       - name: Deploy to EC2
         env:
           HOST: ${{ secrets.EC2_HOST }}
@@ -51,5 +62,3 @@ jobs:
         run: |
           scp -i $PEM_FILE build/libs/app.jar $USER@$HOST:~/app.jar
           ssh -i $PEM_FILE $USER@$HOST "bash ~/deploy.sh"
-
-
