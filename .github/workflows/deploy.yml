@@ -52,3 +52,4 @@ jobs:
           scp -i $PEM_FILE build/libs/app.jar $USER@$HOST:~/app.jar
           ssh -i $PEM_FILE $USER@$HOST "bash ~/deploy.sh"
 
+
