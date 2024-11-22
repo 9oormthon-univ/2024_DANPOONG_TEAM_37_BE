@@ -63,9 +63,6 @@ public class KakaoController {
 			.userData(userData) // 사용자 정보를 함께 반환
 			.build());
 	}
-
-
-
 	@PostMapping("/logout")
 	public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
 		try {
@@ -76,7 +73,6 @@ public class KakaoController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("로그아웃 실패");
 		}
 	}
-
 
 	@GetMapping("/unlink")
 	public ResponseEntity<?> unlinkKakao(@RequestHeader("Authorization") String authHeader) {
