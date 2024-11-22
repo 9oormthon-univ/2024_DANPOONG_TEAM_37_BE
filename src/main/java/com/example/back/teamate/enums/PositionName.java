@@ -22,7 +22,7 @@ public enum PositionName {
 
     public static PositionName fromDatabaseValue(String value) {
         for (PositionName positionName : PositionName.values()) {
-            if (positionName.name().equalsIgnoreCase(value)) {
+            if (positionName.getPositionDisplayName().equalsIgnoreCase(value)) {
                 return positionName;
             }
         }

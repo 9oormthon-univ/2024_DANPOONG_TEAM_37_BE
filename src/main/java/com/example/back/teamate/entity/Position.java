@@ -15,6 +15,6 @@ public class Position {
     private Long positionId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
+    @Column(name="name", nullable = false, unique = true)
     private PositionName positionName;
 }

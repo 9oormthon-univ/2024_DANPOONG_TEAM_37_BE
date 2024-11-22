@@ -24,6 +24,6 @@ public class Skill {
     private Long skillId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name="name", nullable = false)
     private SkillName skillName;
 }

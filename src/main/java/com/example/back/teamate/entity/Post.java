@@ -41,13 +41,11 @@ public class Post {
     @Column
     private String portfolioUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "modeId", nullable = false)
-    private Mode modeId;
+    private int modeId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fieldId", nullable = false)
-    private Field fieldId;
+    private int fieldId;
 
     @CreationTimestamp
     @Column(updatable = false)
