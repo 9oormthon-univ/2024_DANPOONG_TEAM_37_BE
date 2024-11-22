@@ -9,7 +9,6 @@ import com.example.back.teamate.dto.KakaoTokenResponseDto;
 import com.example.back.teamate.dto.KakaoUserInfoResponseDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
 import com.example.back.teamate.service.KakaoService;
-import com.example.back.teamate.service.TokenAuthenticationService;
 import com.example.back.teamate.service.UsersService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ public class KakaoController {
 
 	private final KakaoService kakaoService;
 	private final UsersService usersService;
-	private final TokenAuthenticationService tokenAuthService;
 
 	@GetMapping("/auth/callback")
 	public ResponseEntity<ApiResponse<?>> getTokens(@RequestParam("code") String code) {
