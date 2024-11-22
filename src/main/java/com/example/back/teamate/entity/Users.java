@@ -22,6 +22,8 @@ public class Users extends BaseEntity {
 	@Column(nullable = false)
 	private String email; // 이메일
 
+	private String kakaoTalkId; // 카카오톡 ID
+
 	private String nickname; // 닉네임
 
 	private String profileImage; // 프로필 이미지
@@ -67,7 +69,7 @@ public class Users extends BaseEntity {
 		BasicEnums.Mode mode,
 		BasicEnums.Region region,
 		String city,
-		String district) {
+		String district, String kakaoTalkId) {
 		if (age != null) this.age = age;
 		if (job != null) this.job = job;
 		if (gender != null) this.gender = gender;
@@ -77,6 +79,7 @@ public class Users extends BaseEntity {
 		if (region != null) this.region = region;
 		if (city != null) this.city = city;
 		if (district != null) this.district = district;
+		if (kakaoTalkId != null) this.kakaoTalkId = kakaoTalkId;
 	}
 
 

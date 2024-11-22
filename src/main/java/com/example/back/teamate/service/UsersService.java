@@ -107,6 +107,7 @@ public class UsersService {
 			.region(user.getRegion())
 			.city(user.getCity())
 			.district(user.getDistrict())
+			.kakaoTalkId(user.getKakaoTalkId())
 			.build();
 	}
 
@@ -125,7 +126,8 @@ public class UsersService {
 			updateDto.getMode(),
 			updateDto.getRegion(),
 			updateDto.getCity(),
-			updateDto.getDistrict()
+			updateDto.getDistrict(),
+			updateDto.getKakaoTalkId()
 		);
 		// 변경된 엔티티 저장
 		usersRepository.save(user);

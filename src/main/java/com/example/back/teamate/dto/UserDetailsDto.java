@@ -19,4 +19,5 @@ public class UserDetailsDto {
 	private BasicEnums.Region region; // 대권역
 	private String city; // 도시
 	private String district; // 구
+	private String kakaoTalkId; // 카카오톡 ID
 }
