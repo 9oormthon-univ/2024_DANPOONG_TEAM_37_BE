@@ -2,8 +2,10 @@ package com.example.back.teamate.controller;
 
 import com.example.back.teamate.dto.ApiResponse;
 import com.example.back.teamate.dto.PostDetailResponseDto;
+import com.example.back.teamate.dto.PostFilterRequestDto;
 import com.example.back.teamate.dto.PostListResponseDto;
 import com.example.back.teamate.dto.PostRequestDto;
+import com.example.back.teamate.dto.PostUpdateRequestDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
 import com.example.back.teamate.service.PostService;
 import com.example.back.teamate.service.TokenAuthenticationService;
@@ -14,8 +16,10 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,5 +54,19 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostDetailResponseDto>> getPost(@PathVariable ("postId") Long postId) {
         PostDetailResponseDto post = postService.getPost(postId);
         return ResponseEntity.ok(ApiResponse.createSuccess(post));
+    }
+
+    @PutMapping("/{postId}")
+    public ResponseEntity<?> updatePost(@RequestHeader("Authorization") String authHeader, @PathVariable("postId") Long postId, @RequestBody @Valid PostRequestDto postRequestDto) {
+        RedisUserInfoDto redisUserInfoDto = tokenAuthenticationService.authenticateUser(authHeader);
+
+        postService.updatePost(postId, redisUserInfoDto.getId(),postRequestDto);
+        return ResponseEntity.ok(Map.of("message", "Post updated successfully."));
+    }
+
+    @PostMapping("/filter")
+    public ResponseEntity<List<PostListResponseDto>> getPostsByFilter(@RequestBody PostFilterRequestDto postFilterRequestDto) {
+        List<PostListResponseDto> posts = postService.getPostListByFilter(postFilterRequestDto);
+        return ResponseEntity.ok(posts);
     }
 }
