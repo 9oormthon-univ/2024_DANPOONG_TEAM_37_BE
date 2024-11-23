@@ -1,10 +1,17 @@
 package com.example.back.teamate.controller;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import com.example.back.teamate.dto.AccessTokenResponseDto;
 import com.example.back.teamate.dto.ApiResponse;
+import com.example.back.teamate.dto.CodeResponseDto;
 import com.example.back.teamate.dto.KakaoTokenResponseDto;
 import com.example.back.teamate.dto.KakaoUserInfoResponseDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
@@ -13,6 +20,8 @@ import com.example.back.teamate.service.UsersService;
 
 import lombok.RequiredArgsConstructor;
 import static com.example.back.teamate.dto.ApiResponse.*;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,6 +40,7 @@ public class KakaoController {
 			return ResponseEntity.badRequest().body(createError(e.getMessage()));
 		}
 	}
+
 
 	@PostMapping("/login")
 	public ResponseEntity<ApiResponse<AccessTokenResponseDto>> loginWithKakao(@RequestParam String code) {
@@ -67,4 +77,12 @@ public class KakaoController {
 			return ResponseEntity.badRequest().body(createError("Unlink failed: " + e.getMessage()));
 		}
 	}
+
+	@GetMapping("/redirect")
+	public ResponseEntity<?> fallback(@RequestParam("code") String code) {
+		CodeResponseDto codeResponse = new CodeResponseDto();
+		codeResponse.setCode(code);
+		return ResponseEntity.ok(ApiResponse.createSuccess(codeResponse));
+	}
+
 }
