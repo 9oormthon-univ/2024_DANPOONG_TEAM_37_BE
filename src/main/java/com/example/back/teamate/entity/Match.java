@@ -22,12 +22,12 @@ public class Match {
     private MatchStatus matchStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postId", nullable = false)
+    @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "applicationId", nullable = false)
-//    private Application application;
+   @OneToOne(fetch = FetchType.LAZY)
+   @JoinColumn(name = "application_id", nullable = false)
+   private Application application;
 
     @CreationTimestamp
     @Column(updatable = false)

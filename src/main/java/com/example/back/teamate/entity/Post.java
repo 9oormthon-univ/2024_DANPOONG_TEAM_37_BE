@@ -16,9 +16,9 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name="roleId", nullable = false)
-//    private Role roleId;
+    @ManyToOne(fetch = FetchType.LAZY) // 다대일 관계 설정
+    @JoinColumn(name = "role_id", nullable = false) // 외래 키 이름 명시
+    private Role role; // Role과의 매핑
 
     @Column(nullable = false)
     private int totalMembers;
@@ -41,10 +41,10 @@ public class Post {
     @Column
     private String portfolioUrl;
 
-    @JoinColumn(name = "modeId", nullable = false)
+    @JoinColumn(name = "mode_id", nullable = false)
     private int modeId;
 
-    @JoinColumn(name = "fieldId", nullable = false)
+    @JoinColumn(name = "field_id", nullable = false)
     private int fieldId;
 
     @CreationTimestamp
