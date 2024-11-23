@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import com.example.back.teamate.dto.PostDetailResponseDto;
 import com.example.back.teamate.dto.PostFilterRequestDto;
 import com.example.back.teamate.dto.PostListResponseDto;
@@ -77,7 +76,7 @@ public class PostService {
             log.info("Step 4: Positions and skills saved successfully");
             return post.getPostId();
         } catch (Exception e) {
-            log.error("Error occurred while creating post: {}", e.getMessage(), e);
+//            log.error("Error occurred while creating post: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -106,7 +105,6 @@ public class PostService {
         // 새 포지션 및 스킬 저장
         savePositionsAndSkills(post, postRequestDto.getPositionList());
     }
-
 
     // 게시글 리스트 조회
     @Transactional(readOnly = true)
@@ -294,7 +292,8 @@ public class PostService {
                 .totalMembers(post.getTotalMembers())
                 .build();
             }).collect(Collectors.toList());
-        }
+    }
+
     private Mode getModeById(int modeId) {
         return modeRepository.findByModeId(modeId)
             .orElseThrow(() -> new IllegalArgumentException("Mode not found with ID: " + modeId));
@@ -315,7 +314,7 @@ public class PostService {
         postRepository.findByPostIdAndRoleId(postId, teamLeaderRole.getId())
             .orElseThrow(() -> new IllegalArgumentException("해당 게시글의 팀장이 아닙니다."));
     }
-}
+
 
     private PostListResponseDto convertToPostListResponseDto(Post post) {
         List<PositionName> positions = postPositionRepository.findByPost_PostId(post.getPostId()).stream()
@@ -379,7 +378,4 @@ public class PostService {
             throw new RuntimeException("Failed to filter posts. Please check the request and try again.", e);
         }
     }
-
-
-
 }
