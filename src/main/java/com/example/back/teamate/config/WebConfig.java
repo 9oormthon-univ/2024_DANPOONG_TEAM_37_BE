@@ -14,6 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
 			.allowedOrigins("*") // 모든 출처 허용
 			.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 모든 HTTP 메서드 허용
 			.allowedHeaders("*") // 모든 헤더 허용
+			.allowCredentials(true) // 쿠키 인증 허용
 			.maxAge(3600); // preflight 요청 캐싱 시간 (초)
 	}
 }
