@@ -304,6 +304,17 @@ public class PostService {
     private int getCurrentMembers(Long postId) {
         return matchRepository.countByPostIdAndMatchStatus(postId, MatchStatus.ACCEPTED);
     }
+
+    @Transactional(readOnly = true)
+    public void validateTeamLeader(Long userId, Long postId) {
+        // 사용자가 팀장인지 확인
+        Role teamLeaderRole = roleRepository.findTeamLeaderByUserId(userId)
+            .orElseThrow(() -> new IllegalArgumentException("팀장이 아닙니다."));
+
+        // 팀장의 RoleId와 PostId가 일치하는지 확인
+        postRepository.findByPostIdAndRoleId(postId, teamLeaderRole.getId())
+            .orElseThrow(() -> new IllegalArgumentException("해당 게시글의 팀장이 아닙니다."));
+    }
 }
 
     private PostListResponseDto convertToPostListResponseDto(Post post) {
