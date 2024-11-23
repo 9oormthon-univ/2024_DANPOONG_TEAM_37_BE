@@ -32,7 +32,7 @@ public class KakaoController {
 		}
 	}
 
-	@GetMapping("/login")
+	@PostMapping("/login")
 	public ResponseEntity<ApiResponse<AccessTokenResponseDto>> loginWithKakao(@RequestParam String code) {
 		KakaoTokenResponseDto tokenResponse = kakaoService.getTokensFromKakao(code);
 		KakaoUserInfoResponseDto userInfo = kakaoService.getUserInfo(tokenResponse.getAccessToken());
