@@ -1,19 +1,26 @@
 package com.example.back.teamate.enums;
 
 public enum PositionName {
-    FRONTEND("프론트엔드"),
-    BACKEND("백엔드"),
-    DESIGNER("디자이너"),
-    AI("인공지능"),
-    IOS("iOS"),
-    ANDROID("안드로이드"),
-    PM("PM"),
-    PLANNER("기획자"),
-    MARKETER("마케터");
+    FRONTEND(1, "프론트엔드"),
+    BACKEND(2, "백엔드"),
+    DESIGNER(3, "디자이너"),
+    AI(4, "인공지능"),
+    IOS(5, "iOS"),
+    ANDROID(6, "안드로이드"),
+    PM(7, "PM"),
+    PLANNER(8, "기획자"),
+    MARKETER(9, "마케터");
 
+    private final int positionId;
     private String positionDisplayName;
-    PositionName(String positionDisplayName) {
+
+    PositionName(int PositionId, String positionDisplayName) {
+        this.positionId = PositionId;
         this.positionDisplayName = positionDisplayName;
+    }
+
+    public int getPositionId() {
+        return positionId;
     }
 
     public String getPositionDisplayName() {
@@ -27,5 +34,15 @@ public enum PositionName {
             }
         }
         throw new IllegalArgumentException("Invalid value for FieldName: " + value);
+    }
+
+    // 프론트엔드 값으로 Enum 찾기
+    public static PositionName fromDisplayName(String displayName) {
+        for (PositionName positionName : PositionName.values()) {
+            if (positionName.positionDisplayName.equalsIgnoreCase(displayName)) {
+                return positionName;
+            }
+        }
+        throw new IllegalArgumentException("Invalid display name for PositionName: " + displayName);
     }
 }

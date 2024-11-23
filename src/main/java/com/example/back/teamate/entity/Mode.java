@@ -17,6 +17,6 @@ public class Mode {
     private int modeId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
+    @Column(name="name", nullable = false, unique = true)
     private ModeName modeName;
 }
