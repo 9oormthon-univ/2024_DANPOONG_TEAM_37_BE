@@ -19,12 +19,18 @@ public class Role {
 	private Long id;
 
 	@Enumerated(EnumType.STRING) // Enum 값을 문자열로 저장
-	private TeamRole teamRole; // team_leader or team_member
+	private TeamRole teamRole; // TEAM_LEADER or TEAM_MEMBER
 
 	@ManyToOne
-	@JoinColumn(name = "user_id")
+	@JoinColumn(name = "user_id", nullable = false)
 	private Users user;
 
 	@OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true) // Role과 관련된 Post
 	private List<Post> posts;
+
+	// 필요한 필드만 초기화하는 생성자 추가
+	public Role(Users user, TeamRole teamRole) {
+		this.user = user;
+		this.teamRole = teamRole;
+	}
 }
