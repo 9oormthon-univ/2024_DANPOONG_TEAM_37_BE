@@ -145,15 +145,18 @@ public class ApplicationService {
     // 팀장 확인 로직
     @Transactional
     public void checkIfUserIsTeamLeader(Long userId, Long postId) throws IllegalAccessException {
-        Post post = postRepository.findById(postId)
+        Role teamLeaderRole = roleRepository.findByPosts_PostId(postId)
             .orElseThrow(() -> new IllegalArgumentException("Invalid postId: " + postId));
 
-        if (!post.getRole().getUser().getId().equals(userId)) {
-            throw new IllegalAccessException("You are not authorized to access this resource.");
+        if (!teamLeaderRole.getTeamRole().equals(TeamRole.TEAM_LEADER) || !teamLeaderRole.getUser().getId().equals(userId)) {
+            throw new IllegalAccessException("해당 게시물에 대한 접근 권한이 없습니다.");
         }
     }
 
-    public List<ApplicationResponseDto> getApplicationsByPostId(Long postId) {
+    public List<ApplicationResponseDto> getApplicationsByPostId(Long userId, Long postId) throws IllegalAccessException {
+        // 팀장 여부 확인
+        checkIfUserIsTeamLeader(userId, postId);
+
         // Match 테이블에서 postId로 관련된 applications 엔티티 가져오기
         List<Application> applications = matchRepository.findApplicationsByPostId(postId);
 

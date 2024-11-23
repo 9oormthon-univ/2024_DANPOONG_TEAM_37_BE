@@ -66,7 +66,8 @@ public class PostController {
         RedisUserInfoDto userInfo = tokenAuthenticationService.authenticateUser(authHeader);
         applicationService.checkIfUserIsTeamLeader(userInfo.getId(), postId);
 
-        List<ApplicationResponseDto> applications = applicationService.getApplicationsByPostId(postId);
+        //팀장인지 권한 확인
+        List<ApplicationResponseDto> applications = applicationService.getApplicationsByPostId(userInfo.getId(),postId);
         return ResponseEntity.ok(ApiResponse.createSuccess(applications));
     }
 
