@@ -25,7 +25,7 @@ import lombok.Setter;
 public class Skill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long skillId;
+    private int skillId;
 
     @Enumerated(EnumType.STRING)
     @Column(name="name", nullable = false)

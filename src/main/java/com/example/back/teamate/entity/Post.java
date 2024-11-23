@@ -2,6 +2,8 @@ package com.example.back.teamate.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.List;
+
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -10,7 +12,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "post")
+@Builder
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,4 +63,28 @@ public class Post {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostPosition> postPositions;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostSkill> postSkills;
+
+    // 값 업데이트를 위한 메서드
+    public void updatePost(String title, String content, int totalMembers, int expectedPeriod, LocalDate startDate,
+        LocalDate deadline, int modeId, int fieldId, String googleFormUrl,
+        String kakaoChatUrl, String portfolioUrl) {
+        this.title = title;
+        this.content = content;
+        this.totalMembers = totalMembers;
+        this.expectedPeriod = expectedPeriod;
+        this.startDate = startDate;
+        this.deadline = deadline;
+        this.modeId = modeId;
+        this.fieldId = fieldId;
+        this.googleFormUrl = googleFormUrl;
+        this.kakaoChatUrl = kakaoChatUrl;
+        this.portfolioUrl = portfolioUrl;
+    }
 }
+

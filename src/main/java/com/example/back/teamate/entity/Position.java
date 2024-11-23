@@ -14,7 +14,7 @@ import lombok.*;
 public class Position {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long positionId;
+    private int positionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name="name", nullable = false, unique = true)

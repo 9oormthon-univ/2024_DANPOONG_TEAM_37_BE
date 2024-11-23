@@ -6,8 +6,10 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "post_skill")
+@Builder
 public class PostSkill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

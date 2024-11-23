@@ -19,7 +19,6 @@ public class NotificationController {
 
 	/**
 	 * 이메일 발송 API
-	 *
 	 * @param to       수신자 이메일
 	 * @param subject  이메일 제목
 	 * @param message  이메일 본문 메시지

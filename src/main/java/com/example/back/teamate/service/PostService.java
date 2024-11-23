@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.example.back.teamate.dto.PostDetailResponseDto;
+import com.example.back.teamate.dto.PostFilterRequestDto;
 import com.example.back.teamate.dto.PostListResponseDto;
 import com.example.back.teamate.dto.PostRequestDto;
 import com.example.back.teamate.entity.Field;
@@ -33,8 +34,6 @@ import com.example.back.teamate.repository.PostSkillRepository;
 import com.example.back.teamate.repository.RoleRepository;
 import com.example.back.teamate.repository.SkillRepository;
 import com.example.back.teamate.repository.UsersRepository;
-
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -42,8 +41,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @Transactional
 @RequiredArgsConstructor
 public class PostService {
@@ -57,152 +58,80 @@ public class PostService {
     private final RoleRepository roleRepository;
     private final UsersRepository usersRepository;
 
+    // 게시글 생성
     public Long createPost(Long userId, PostRequestDto postRequestDto) {
-        // 사용자 조회
-        Users user = usersRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("Invalid userId: " + userId));
+        try {
+            log.info("Step 1: Fetching user with ID: {}", userId);
+            Users user = getUserById(userId);
+            Role role = createRole(user, TeamRole.TEAM_LEADER);
+            log.info("Step 2: User and Role fetched successfully");
 
-        // 역할 생성 및 저장
-        Role role = Role.builder()
-            .teamRole(TeamRole.TEAM_LEADER)
-            .user(user)
-            .build();
-        roleRepository.save(role);
+            Post post = buildPost(postRequestDto, role);
+            postRepository.save(post);
+            log.info("Step 3: Post saved successfully with ID: {}", post.getPostId());
 
-        // field값을 프로젝트,스터디 중 뭘로 받았는지 확인하고 enum값으로 변환
-        FieldName fieldName = FieldName.fromDisplayName(postRequestDto.getField());
-        ModeName modeName = ModeName.fromDisplayName(postRequestDto.getMode());
+            savePositionsAndSkills(post, postRequestDto.getPositionList());
+            log.info("Step 4: Positions and skills saved successfully");
+            return post.getPostId();
+        } catch (Exception e) {
+            log.error("Error occurred while creating post: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
 
-        Post post = new Post();
+    @Transactional
+    public void updatePost(Long postId, Long userId, PostRequestDto postRequestDto) {
+        // 게시글과 사용자 검증
+        Post post = validateAndGetPost(postId, userId);
+        // Post 엔티티 업데이트
         post.setTitle(postRequestDto.getTitle());
         post.setContent(postRequestDto.getContent());
         post.setTotalMembers(postRequestDto.getTotalMembers());
         post.setExpectedPeriod(postRequestDto.getExpectedPeriod());
         post.setStartDate(postRequestDto.getStartDate());
         post.setDeadline(postRequestDto.getDeadline());
-        post.setFieldId(fieldName.getFieldId());
-        post.setModeId(modeName.getModeId());
-        post.setRole(role);
-        Post savedPost = postRepository.save(post);
+        post.setModeId(ModeName.fromDisplayName(postRequestDto.getMode()).getModeId());
+        post.setFieldId(FieldName.fromDisplayName(postRequestDto.getField()).getFieldId());
+        post.setGoogleFormUrl(postRequestDto.getGoogleFormUrl());
+        post.setKakaoChatUrl(postRequestDto.getKakaoChatUrl());
+        post.setPortfolioUrl(postRequestDto.getPortfolioUrl());
 
-        //URL 값 저장
-        if (postRequestDto.getGoogleFormUrl() != null && !postRequestDto.getGoogleFormUrl().isBlank()) {
-            post.setGoogleFormUrl(postRequestDto.getGoogleFormUrl());
-        }
-        if (postRequestDto.getKakaoChatUrl() != null && !postRequestDto.getKakaoChatUrl().isBlank()) {
-            post.setKakaoChatUrl(postRequestDto.getKakaoChatUrl());
-        }
-        if (postRequestDto.getPortfolioUrl() != null && !postRequestDto.getPortfolioUrl().isBlank()) {
-            post.setPortfolioUrl(postRequestDto.getPortfolioUrl());
-        }
+        // 기존 포지션 및 스킬 삭제
+        postPositionRepository.deleteByPost(post);
+        postSkillRepository.deleteByPost(post);
 
-        //position와 skill DB저장
-        for (PostRequestDto.PositionRequestDto positionDto : postRequestDto.getPositionList()) {
-            PositionName positionName = PositionName.fromDatabaseValue(positionDto.getPosition());
-            Position position = positionRepository.findByPositionName(positionName)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid position name: " + positionName));
-
-            PostPosition postPosition = new PostPosition();
-            postPosition.setPost(post);
-            postPosition.setPosition(position);
-            postPositionRepository.save(postPosition);
-
-            for (String skillName : positionDto.getSkills()) {
-                SkillName skillEnum = SkillName.fromDatabaseValue(skillName);
-                Skill skill = skillRepository.findBySkillName(skillEnum)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid skill name: " + skillName));
-
-                PostSkill postSkill = new PostSkill();
-                postSkill.setPost(savedPost);
-                postSkill.setSkill(skill);
-                postSkill.setPostPosition(postPosition);
-                postSkillRepository.save(postSkill);
-            }
-        }
-        return savedPost.getPostId();
+        // 새 포지션 및 스킬 저장
+        savePositionsAndSkills(post, postRequestDto.getPositionList());
     }
 
+
+    // 게시글 리스트 조회
     @Transactional(readOnly = true)
     public List<PostListResponseDto> getPostListAsList(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Post> posts = postRepository.findAll(pageable);
-
-        // Page<Post>를 List<PostListResponseDto>로 변환
-        return posts.stream().map(post -> {
-            // 1. Position 데이터 조회
-            List<PositionName> positions = postPositionRepository.findByPost_PostId(post.getPostId()).stream()
-                .map(postPosition -> postPosition.getPosition().getPositionName())
-                .collect(Collectors.toList());
-
-            // 2. Skill 데이터 조회
-            List<SkillName> skills = postSkillRepository.findByPost_PostId(post.getPostId()).stream()
-                .map(postSkill -> postSkill.getSkill().getSkillName())
-                .collect(Collectors.toList());
-
-            // 3. Field 데이터 조회
-            Field field = fieldRepository.findByFieldId(post.getFieldId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid field id: " + post.getFieldId()));
-
-            // 4. Author 데이터 조회
-            Role author = roleRepository.findByPosts_PostId(post.getPostId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid role id: " + post.getPostId()));
-
-            // 5. DTO로 변환
-            return PostListResponseDto.builder()
-                .postId(post.getPostId())
-                .title(post.getTitle())
-                .field(field.getFieldName()) // FieldName을 변환
-                .position(positions) // 리스트로 변환한 포지션
-                .skill(skills)       // 리스트로 변환한 스킬
-                .deadline(post.getDeadline().toString())
-                .author(PostListResponseDto.AuthorInfo.builder()
-                    .nickname(author.getUser().getNickname())
-                    .profileImage(author.getUser().getProfileImage())
-                    .build())
-                .build();
-        }).collect(Collectors.toList());
+        return postRepository.findAll(pageable).stream()
+            .map(this::convertToPostListResponseDto)
+            .collect(Collectors.toList());
     }
 
+    // 게시글 상세 조회
     @Transactional(readOnly = true)
     public PostDetailResponseDto getPost(Long postId) {
-        // Post 엔티티 조회
-        Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException("Invalid postId: " + postId));
+        Post post = getPostById(postId);
 
-        // Position 데이터 조회
-        List<PostPosition> postPositions = postPositionRepository.findByPost_PostId(post.getPostId());
-        Map<PositionName, List<SkillName>> positionSkills = postPositions.stream().collect(Collectors.toMap(
-            postPosition -> postPosition.getPosition().getPositionName(),
-            postPosition -> postSkillRepository.findByPost_PostIdAndPostPosition_Position_PositionId(
-                    postId, postPosition.getPosition().getPositionId())
-                .stream()
-                .map(postSkill -> postSkill.getSkill().getSkillName())
-                .collect(Collectors.toList())
-        ));
-
-        // Field 데이터 조회
-        Field field = fieldRepository.findByFieldId(post.getFieldId())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid field id: " + post.getFieldId()));
-
-        Mode mode = modeRepository.findByModeId(post.getModeId())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid mode id: " + post.getModeId()));
-
-        // Author 데이터 조회
+        Map<PositionName, List<SkillName>> positionSkills = getPositionSkills(postId);
+        Field field = getFieldById(post.getFieldId());
+        Mode mode = getModeById(post.getModeId());
         Role author = post.getRole();
 
-        // Match 데이터 조회 (현재 팀 멤버 상태 알아야 되므로) -> 추후 구현
-        // Todo : 지원서 로직 작성 후 구현해야 함
-
-        // 날짜 포맷 변경
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
-
 
         return PostDetailResponseDto.builder()
             .postId(post.getPostId())
             .header(PostDetailResponseDto.HeaderInfo.builder()
                 .title(post.getTitle())
                 .deadline("D-" + calculateDeadlineDays(post.getDeadline()))
-                .createdAt(post.getCreatedAt().format(formatter))
+                .createdAt(post.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
                 .build())
             .author(PostDetailResponseDto.AuthorInfo.builder()
                 .nickname(author.getUser().getNickname())
@@ -223,10 +152,189 @@ public class PostService {
             .build();
     }
 
-    // 마감일 D-Day 계산 메서드
+    private void savePositionsAndSkills(Post post, List<PostRequestDto.PositionRequestDto> positionRequestDtos) {
+        for (PostRequestDto.PositionRequestDto positionDto : positionRequestDtos) {
+            // Position 찾기
+            Position position = getPositionByName(positionDto.getPosition());
+
+            // 기존 PostPosition이 있는지 확인
+            PostPosition postPosition = postPositionRepository.findByPostAndPosition(post, position)
+                .orElse(PostPosition.builder()
+                    .post(post)
+                    .position(position)
+                    .build());
+
+            postPosition = postPositionRepository.save(postPosition);
+
+            // Skills 저장
+            saveSkillsForPosition(post, positionDto.getSkills(), postPosition);
+        }
+    }
+
+    private void saveSkillsForPosition(Post post, List<String> skills, PostPosition postPosition) {
+        for (String skillName : skills) {
+            Skill skill = getSkillByName(skillName);
+
+            // 기존 PostSkill이 있는지 확인
+            if (!postSkillRepository.existsByPostAndPostPositionAndSkill(post, postPosition, skill)) {
+                PostSkill postSkill = PostSkill.builder()
+                    .post(post)
+                    .postPosition(postPosition)
+                    .skill(skill)
+                    .build();
+
+                postSkillRepository.save(postSkill);
+            }
+        }
+    }
+
+
+    // 포지션과 연관된 기술 조회P
+    public Map<PositionName, List<SkillName>> getPositionSkills(Long postId) {
+        List<PostPosition> postPositions = postPositionRepository.findByPost_PostId(postId);
+
+        return postPositions.stream().collect(Collectors.toMap(
+            postPosition -> postPosition.getPosition().getPositionName(),
+            postPosition -> postSkillRepository.findByPost_PostIdAndPostPosition_Position_PositionId(
+                    postId, (long)postPosition.getPosition().getPositionId())
+                .stream()
+                .map(postSkill -> postSkill.getSkill().getSkillName())
+                .collect(Collectors.toList())
+        ));
+    }
+
+    // 마감일 계산
     private int calculateDeadlineDays(LocalDate deadline) {
         return Period.between(LocalDate.now(), deadline).getDays();
     }
+
+    // 사용자 조회
+    private Users getUserById(Long userId) {
+        return usersRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+    }
+
+    // 역할 생성
+    private Role createRole(Users user, TeamRole teamRole) {
+        Role role = new Role(user, teamRole);
+        return roleRepository.save(role);
+    }
+
+    // Post 생성
+    private Post buildPost(PostRequestDto postRequestDto, Role role) {
+        return Post.builder()
+            .title(postRequestDto.getTitle())
+            .content(postRequestDto.getContent())
+            .totalMembers(postRequestDto.getTotalMembers())
+            .expectedPeriod(postRequestDto.getExpectedPeriod())
+            .startDate(postRequestDto.getStartDate())
+            .deadline(postRequestDto.getDeadline())
+            .fieldId(FieldName.fromDisplayName(postRequestDto.getField()).getFieldId())
+            .modeId(ModeName.fromDisplayName(postRequestDto.getMode()).getModeId())
+            .googleFormUrl(postRequestDto.getGoogleFormUrl())
+            .kakaoChatUrl(postRequestDto.getKakaoChatUrl())
+            .portfolioUrl(postRequestDto.getPortfolioUrl())
+            .role(role)
+            .build();
+    }
+
+    // 게시글 검증 및 조회
+    private Post validateAndGetPost(Long postId, Long userId) {
+        Post post = getPostById(postId);
+        if (!post.getRole().getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Unauthorized user for this post.");
+        }
+        return post;
+    }
+
+    private Post getPostById(Long postId) {
+        return postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
+    }
+
+    private Position getPositionByName(String positionName) {
+        return positionRepository.findByPositionName(PositionName.fromDatabaseValue(positionName))
+            .orElseThrow(() -> new IllegalArgumentException("Position not found: " + positionName));
+    }
+
+    private Skill getSkillByName(String skillName) {
+        return skillRepository.findBySkillName(SkillName.fromDatabaseValue(skillName))
+            .orElseThrow(() -> new IllegalArgumentException("Skill not found: " + skillName));
+    }
+
+    private Field getFieldById(int fieldId) {
+        return fieldRepository.findByFieldId(fieldId)
+            .orElseThrow(() -> new IllegalArgumentException("Field not found with ID: " + fieldId));
+    }
+
+    private Mode getModeById(int modeId) {
+        return modeRepository.findByModeId(modeId)
+            .orElseThrow(() -> new IllegalArgumentException("Mode not found with ID: " + modeId));
+    }
+
+    private PostListResponseDto convertToPostListResponseDto(Post post) {
+        List<PositionName> positions = postPositionRepository.findByPost_PostId(post.getPostId()).stream()
+            .map(postPosition -> postPosition.getPosition().getPositionName())
+            .collect(Collectors.toList());
+
+        List<SkillName> skills = postSkillRepository.findByPost_PostId(post.getPostId()).stream()
+            .map(postSkill -> postSkill.getSkill().getSkillName())
+            .collect(Collectors.toList());
+
+        Field field = getFieldById(post.getFieldId());
+        Role author = post.getRole();
+
+        return PostListResponseDto.builder()
+            .postId(post.getPostId())
+            .title(post.getTitle())
+            .field(field.getFieldName())
+            .position(positions)
+            .skill(skills)
+            .deadline(post.getDeadline().toString())
+            .author(PostListResponseDto.AuthorInfo.builder()
+                .nickname(author.getUser().getNickname())
+                .profileImage(author.getUser().getProfileImage())
+                .build())
+            .build();
+    }
+
+    public List<PostListResponseDto> getPostListByFilter(PostFilterRequestDto postFilterRequestDto) {
+        Pageable pageable = PageRequest.of(
+            postFilterRequestDto.getPage() - 1,
+            postFilterRequestDto.getSize(),
+            Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        try {
+            log.info("Filter Request received: Field={}, Positions={}, Skills={}, Mode={}, Page={}, Size={}",
+                postFilterRequestDto.getField(),
+                postFilterRequestDto.getPositions(),
+                postFilterRequestDto.getSkills(),
+                postFilterRequestDto.getMode(),
+                postFilterRequestDto.getPage(),
+                postFilterRequestDto.getSize()
+            );
+
+            // 필터링된 데이터 가져오기
+            List<Post> posts = postRepository.findFilteredPosts(
+                postFilterRequestDto.getPositions(),
+                postFilterRequestDto.getSkills(),
+                postFilterRequestDto.getMode(),
+                postFilterRequestDto.getField()
+                );
+
+            log.info("Filtered posts count: {}", posts.size());
+            posts.forEach(post -> log.debug("Filtered Post: ID={}, Title={}", post.getPostId(), post.getTitle()));
+
+            return posts.stream()
+                .map(this::convertToPostListResponseDto)
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error occurred while filtering posts: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to filter posts. Please check the request and try again.", e);
+        }
+    }
+
 
 
 }
