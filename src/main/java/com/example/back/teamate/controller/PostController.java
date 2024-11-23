@@ -1,6 +1,7 @@
 package com.example.back.teamate.controller;
 
 import com.example.back.teamate.dto.ApiResponse;
+import com.example.back.teamate.dto.PostDetailResponseDto;
 import com.example.back.teamate.dto.PostListResponseDto;
 import com.example.back.teamate.dto.PostRequestDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
@@ -13,6 +14,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -42,5 +44,11 @@ public class PostController {
         @RequestParam(value = "size", defaultValue = "10") int size) {
         List<PostListResponseDto> posts = postService.getPostListAsList(page, size);
         return ResponseEntity.ok(ApiResponse.createSuccess(posts));
+    }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<ApiResponse<PostDetailResponseDto>> getPost(@PathVariable ("postId") Long postId) {
+        PostDetailResponseDto post = postService.getPost(postId);
+        return ResponseEntity.ok(ApiResponse.createSuccess(post));
     }
 }

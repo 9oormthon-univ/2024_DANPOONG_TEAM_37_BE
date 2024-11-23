@@ -1,11 +1,17 @@
 package com.example.back.teamate.service;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.example.back.teamate.dto.PostDetailResponseDto;
 import com.example.back.teamate.dto.PostListResponseDto;
 import com.example.back.teamate.dto.PostRequestDto;
 import com.example.back.teamate.entity.Field;
+import com.example.back.teamate.entity.Mode;
 import com.example.back.teamate.entity.Position;
 import com.example.back.teamate.entity.Post;
 import com.example.back.teamate.entity.PostPosition;
@@ -156,5 +162,71 @@ public class PostService {
                 .build();
         }).collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public PostDetailResponseDto getPost(Long postId) {
+        // Post 엔티티 조회
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid postId: " + postId));
+
+        // Position 데이터 조회
+        List<PostPosition> postPositions = postPositionRepository.findByPost_PostId(post.getPostId());
+        Map<PositionName, List<SkillName>> positionSkills = postPositions.stream().collect(Collectors.toMap(
+            postPosition -> postPosition.getPosition().getPositionName(),
+            postPosition -> postSkillRepository.findByPost_PostIdAndPostPosition_Position_PositionId(
+                    postId, postPosition.getPosition().getPositionId())
+                .stream()
+                .map(postSkill -> postSkill.getSkill().getSkillName())
+                .collect(Collectors.toList())
+        ));
+
+        // Field 데이터 조회
+        Field field = fieldRepository.findByFieldId(post.getFieldId())
+            .orElseThrow(() -> new IllegalArgumentException("Invalid field id: " + post.getFieldId()));
+
+        Mode mode = modeRepository.findByModeId(post.getModeId())
+            .orElseThrow(() -> new IllegalArgumentException("Invalid mode id: " + post.getModeId()));
+
+        // Author 데이터 조회
+        Role author = post.getRole();
+
+        // Match 데이터 조회 (현재 팀 멤버 상태 알아야 되므로) -> 추후 구현
+        // Todo : 지원서 로직 작성 후 구현해야 함
+
+        // 날짜 포맷 변경
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+
+
+        return PostDetailResponseDto.builder()
+            .postId(post.getPostId())
+            .header(PostDetailResponseDto.HeaderInfo.builder()
+                .title(post.getTitle())
+                .deadline("D-" + calculateDeadlineDays(post.getDeadline()))
+                .createdAt(post.getCreatedAt().format(formatter))
+                .build())
+            .author(PostDetailResponseDto.AuthorInfo.builder()
+                .nickname(author.getUser().getNickname())
+                .profileImage(author.getUser().getProfileImage())
+                .build())
+            .category(PostDetailResponseDto.CategoryInfo.builder()
+                .totalMembers(post.getTotalMembers())
+                .currentMembers(3)
+                .mode(mode.getModeName())
+                .field(field.getFieldName())
+                .startDate(post.getStartDate().format(formatter))
+                .positionSkills(positionSkills)
+                .googleFormUrl(post.getGoogleFormUrl())
+                .kakaoChatUrl(post.getKakaoChatUrl())
+                .portfolioUrl(post.getPortfolioUrl())
+                .build())
+            .content(post.getContent())
+            .build();
+    }
+
+    // 마감일 D-Day 계산 메서드
+    private int calculateDeadlineDays(LocalDate deadline) {
+        return Period.between(LocalDate.now(), deadline).getDays();
+    }
+
 
 }
