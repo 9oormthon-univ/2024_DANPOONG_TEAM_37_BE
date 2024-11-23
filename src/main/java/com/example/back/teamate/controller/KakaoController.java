@@ -78,7 +78,7 @@ public class KakaoController {
 		}
 	}
 
-	@GetMapping("/redirect")
+	@GetMapping("/kakao")
 	public ResponseEntity<?> fallback(@RequestParam("code") String code) {
 		CodeResponseDto codeResponse = new CodeResponseDto();
 		codeResponse.setCode(code);
