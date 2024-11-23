@@ -14,15 +14,15 @@ public class PostSkill {
     private Long postSkillId; // Primary Key
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postId", nullable = false)
+    @JoinColumn(name = "post_id", nullable = false)
     private Post post; // Post 엔티티와 연관
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "skillId", nullable = false)
+    @JoinColumn(name = "skill_id", nullable = false)
     private Skill skill;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postPositionId", nullable = false)
+    @JoinColumn(name = "post_position_id", nullable = false)
     private PostPosition postPosition;
 
 }

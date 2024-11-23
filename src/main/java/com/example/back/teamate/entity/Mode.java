@@ -7,12 +7,14 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
+@Builder
 @Table(name = "mode")
 public class Mode {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long modeId;
+    private int modeId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true)

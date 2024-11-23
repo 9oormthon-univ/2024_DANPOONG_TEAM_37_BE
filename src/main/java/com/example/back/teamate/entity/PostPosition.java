@@ -14,10 +14,10 @@ public class PostPosition {
     private Long postPositionId; // Primary Key
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postId", nullable = false)
+    @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "positionId", nullable = false)
+    @JoinColumn(name = "position_id", nullable = false)
     private Position position;
 }
