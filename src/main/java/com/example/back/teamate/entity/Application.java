@@ -27,19 +27,11 @@ public class Application extends BaseEntity {
 	@Column(nullable = false)
 	private String name; // 지원서 이름
 
-	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "field_id", nullable = false)
-	private Field field; // 분야 (Field 테이블 참조)
+	private int fieldId; // 분야 (Field 테이블 참조)
 
-	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "position_id", nullable = false)
-	private Position position; // 포지션 (Position 테이블 참조)
-
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "skill_id")
-	private Skill skill; // 기술 스택 (Skill 테이블 참조)
-
-	private String topic; // 관심 토픽
+	private int positionId; // 포지션 (Position 테이블 참조)
 
 	@Column(length = 1000)
 	private String introduction; // 자기소개
