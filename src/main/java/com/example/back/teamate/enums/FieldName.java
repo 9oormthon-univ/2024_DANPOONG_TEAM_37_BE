@@ -1,5 +1,7 @@
 package com.example.back.teamate.enums;
 
+import java.util.Arrays;
+
 public enum FieldName {
         PROJECT(1, "프로젝트"),
         STUDY(2, "스터디");
@@ -18,6 +20,7 @@ public enum FieldName {
         public String getFieldDisplayName() {
                 return fieldDisplayName;
         }
+
         public static FieldName fromDatabaseValue(String value) {
                 for (FieldName fieldName : FieldName.values()) {
                         if (fieldName.name().equalsIgnoreCase(value)) {
@@ -25,6 +28,13 @@ public enum FieldName {
                         }
                 }
                 throw new IllegalArgumentException("Invalid value for FieldName: " + value);
+        }
+
+        public static FieldName fromDatabaseValueForInt(int value) {
+                return Arrays.stream(FieldName.values())
+                    .filter(field -> field.getFieldId() == value)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid fieldId: " + value));
         }
 
         // 프론트엔드 값으로 Enum 찾기

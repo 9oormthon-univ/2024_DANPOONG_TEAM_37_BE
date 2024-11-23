@@ -19,4 +19,12 @@ public class TokenAuthenticationService {
 		// 토큰 검증 및 사용자 정보 반환
 		return usersService.validateToken(accessToken);
 	}
+
+	public Long getUserIdFromToken(String authHeader) {
+		// 사용자 인증 및 Redis에서 사용자 정보 가져오기
+		RedisUserInfoDto userInfo = authenticateUser(authHeader);
+
+		// userId 반환
+		return userInfo.getId();
+	}
 }

@@ -1,5 +1,6 @@
 package com.example.back.teamate.controller;
 
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,5 +54,11 @@ public class UsersController {
 		return ResponseEntity.ok(ApiResponse.createSuccessWithContent("개인정보 수정을 완료하였습니다."));
 	}
 
+	@GetMapping("/user")
+	public ResponseEntity<?> getUserIdFromToken(@RequestHeader("Authorization") String authHeader) {
+		Long userId = tokenAuthService.getUserIdFromToken(authHeader);
+
+		return ResponseEntity.ok(Map.of("userId", userId));
+	}
 
 }

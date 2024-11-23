@@ -1,6 +1,6 @@
 package com.example.back.teamate.enums;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
 
 public enum PositionName {
     FRONTEND(1, "프론트엔드"),
@@ -31,11 +31,18 @@ public enum PositionName {
 
     public static PositionName fromDatabaseValue(String value) {
         for (PositionName positionName : PositionName.values()) {
-            if (positionName.name().equalsIgnoreCase(value)) {
+            if (positionName.getPositionDisplayName().equalsIgnoreCase(value)) {
                 return positionName;
             }
         }
         throw new IllegalArgumentException("Invalid value for FieldName: " + value);
+    }
+
+    public static PositionName fromDatabaseValueForInt(int value) {
+        return Arrays.stream(PositionName.values())
+            .filter(field -> field.getPositionId() == value)
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Invalid fieldId: " + value));
     }
 
     // 프론트엔드 값으로 Enum 찾기

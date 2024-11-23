@@ -3,6 +3,7 @@ package com.example.back.teamate.controller;
 import com.example.back.teamate.dto.ApiResponse;
 import com.example.back.teamate.dto.ApplicationRequestDto;
 import com.example.back.teamate.dto.ApplicationListResponseDto;
+import com.example.back.teamate.dto.ApplicationResponseDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
 import com.example.back.teamate.service.ApplicationService;
 import com.example.back.teamate.service.TokenAuthenticationService;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -40,10 +42,13 @@ public class ApplicationController {
     public ResponseEntity<ApiResponse<List<ApplicationListResponseDto>>> getApplicationsByUserId(@RequestHeader("Authorization") String authHeader,
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "10") int size) {
-        // 사용자 인증 및 userId 검증
-        RedisUserInfoDto authenticatedUser = tokenAuthenticationService.authenticateUser(authHeader);
-        // 지원서 목록 조회
-        List<ApplicationListResponseDto> applications = applicationService.getApplicationsByAuthenticatedUser(authHeader, page, size);
+        // 1. 사용자 인증 및 userId 가져오기
+        RedisUserInfoDto userInfo = tokenAuthenticationService.authenticateUser(authHeader);
+        Long userId = userInfo.getId();
+
+        // 2. 지원서 목록 조회
+        List<ApplicationListResponseDto> applications = applicationService.getApplicationsByUserId(userId, page, size);
+
         return ResponseEntity.ok(ApiResponse.createSuccess(applications));
     }
 }

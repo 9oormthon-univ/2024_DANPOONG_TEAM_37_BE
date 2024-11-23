@@ -1,12 +1,13 @@
 package com.example.back.teamate.controller;
 
 import com.example.back.teamate.dto.ApiResponse;
+import com.example.back.teamate.dto.ApplicationResponseDto;
 import com.example.back.teamate.dto.PostDetailResponseDto;
 import com.example.back.teamate.dto.PostFilterRequestDto;
 import com.example.back.teamate.dto.PostListResponseDto;
 import com.example.back.teamate.dto.PostRequestDto;
-import com.example.back.teamate.dto.PostUpdateRequestDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
+import com.example.back.teamate.service.ApplicationService;
 import com.example.back.teamate.service.PostService;
 import com.example.back.teamate.service.TokenAuthenticationService;
 import jakarta.validation.Valid;
@@ -16,7 +17,6 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -32,9 +32,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostController {
     private final PostService postService;
     private final TokenAuthenticationService tokenAuthenticationService;
+    private final ApplicationService applicationService;
 
     @PostMapping
-    public ResponseEntity<?> createPost(@RequestHeader("Authorization") String authHeader, @RequestBody @Valid PostRequestDto postRequestDto) {
+    public ResponseEntity<?> createPost(@RequestHeader("Authorization") String authHeader,
+        @RequestBody @Valid PostRequestDto postRequestDto) {
         RedisUserInfoDto redisUserInfoDto = tokenAuthenticationService.authenticateUser(authHeader);
 
         Long postId = postService.createPost(redisUserInfoDto.getId(), postRequestDto);
@@ -51,9 +53,21 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<ApiResponse<PostDetailResponseDto>> getPost(@PathVariable ("postId") Long postId) {
+    public ResponseEntity<ApiResponse<PostDetailResponseDto>> getPost(
+        @PathVariable("postId") Long postId) {
         PostDetailResponseDto post = postService.getPost(postId);
         return ResponseEntity.ok(ApiResponse.createSuccess(post));
+    }
+
+    @GetMapping("/{postId}/applications")
+    public ResponseEntity<?> getApplicationsByPostId(
+        @RequestHeader("Authorization") String authHeader,
+        @PathVariable Long postId) throws IllegalAccessException {
+        RedisUserInfoDto userInfo = tokenAuthenticationService.authenticateUser(authHeader);
+        applicationService.checkIfUserIsTeamLeader(userInfo.getId(), postId);
+
+        List<ApplicationResponseDto> applications = applicationService.getApplicationsByPostId(postId);
+        return ResponseEntity.ok(ApiResponse.createSuccess(applications));
     }
 
     @PutMapping("/{postId}")

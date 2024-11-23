@@ -3,10 +3,13 @@ package com.example.back.teamate.service;
 import com.example.back.teamate.dto.ApplicationRequestDto;
 import com.example.back.teamate.dto.ApplicationListResponseDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
+import com.example.back.teamate.dto.UserDetailsDto;
 import com.example.back.teamate.entity.Application;
 import com.example.back.teamate.entity.ApplicationSkill;
 import com.example.back.teamate.entity.ApplicationTopic;
 import com.example.back.teamate.entity.Field;
+import com.example.back.teamate.entity.Match;
+import com.example.back.teamate.entity.Post;
 import com.example.back.teamate.entity.Role;
 import com.example.back.teamate.entity.Skill;
 import com.example.back.teamate.entity.Users;
@@ -15,10 +18,12 @@ import com.example.back.teamate.enums.PositionName;
 import com.example.back.teamate.enums.SkillName;
 import com.example.back.teamate.enums.TeamRole;
 import com.example.back.teamate.repository.ApplicationRepository;
+import com.example.back.teamate.dto.ApplicationResponseDto;
 import com.example.back.teamate.repository.ApplicationSkillRepository;
 import com.example.back.teamate.repository.ApplicationTopicRepository;
 import com.example.back.teamate.repository.FieldRepository;
-import com.example.back.teamate.repository.PositionRepository;
+import com.example.back.teamate.repository.MatchRepository;
+import com.example.back.teamate.repository.PostRepository;
 import com.example.back.teamate.repository.RoleRepository;
 import com.example.back.teamate.repository.SkillRepository;
 import com.example.back.teamate.repository.UsersRepository;
@@ -42,13 +47,14 @@ public class ApplicationService {
     private final UsersRepository usersRepository;
     private final RoleRepository roleRepository;
     private final FieldRepository fieldRepository;
-    private final TokenAuthenticationService tokenAuthenticationService;
+    private final PostRepository postRepository;
+    private final MatchRepository matchRepository;
 
     public ApplicationService(ApplicationRepository applicationRepository,
         SkillRepository skillRepository, ApplicationSkillRepository applicationSkillRepository,
         ApplicationTopicRepository applicationTopicRepository, UsersRepository usersRepository,
         RoleRepository roleRepository, FieldRepository fieldRepository,
-        TokenAuthenticationService tokenAuthenticationService) {
+        PostRepository postRepository, MatchRepository matchRepository) {
         this.applicationRepository = applicationRepository;
         this.skillRepository = skillRepository;
         this.applicationSkillRepository = applicationSkillRepository;
@@ -56,7 +62,8 @@ public class ApplicationService {
         this.usersRepository = usersRepository;
         this.roleRepository = roleRepository;
         this.fieldRepository = fieldRepository;
-        this.tokenAuthenticationService = tokenAuthenticationService;
+        this.postRepository = postRepository;
+        this.matchRepository = matchRepository;
     }
 
 
@@ -114,16 +121,14 @@ public class ApplicationService {
         return savedApplication.getId();
     }
 
-    public List<ApplicationListResponseDto> getApplicationsByAuthenticatedUser(String accessToken, int page, int size) {
-        RedisUserInfoDto userInfo = tokenAuthenticationService.authenticateUser(accessToken);
-        Long userId = userInfo.getId();
-        return getApplicationsByUserId(userId, page, size);
-    }
-
     @Transactional(readOnly = true)
     public List<ApplicationListResponseDto> getApplicationsByUserId(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Direction.DESC, "createdAt"));
-        Page<Application> applications = applicationRepository.findByUserId(userId, pageable);
+        // 1. userId로 Role 목록 조회
+        List<Role> roles = roleRepository.findByUser_Id(userId);
+
+        // 2. Role 목록으로 Application 조회
+        Page<Application> applications = applicationRepository.findByRoleIn(roles, PageRequest.of(page, size));
 
         return applications.stream().map(application -> {
             Field field = fieldRepository.findByFieldId(application.getFieldId())
@@ -136,4 +141,40 @@ public class ApplicationService {
                 .build();
         }).collect(Collectors.toList());
     }
+
+    // 팀장 확인 로직
+    @Transactional
+    public void checkIfUserIsTeamLeader(Long userId, Long postId) throws IllegalAccessException {
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid postId: " + postId));
+
+        if (!post.getRole().getUser().getId().equals(userId)) {
+            throw new IllegalAccessException("You are not authorized to access this resource.");
+        }
+    }
+
+    public List<ApplicationResponseDto> getApplicationsByPostId(Long postId) {
+        // Match 테이블에서 postId로 관련된 applications 엔티티 가져오기
+        List<Application> applications = matchRepository.findApplicationsByPostId(postId);
+
+        // ApplicationResponseDto로 변환
+        return applications.stream()
+            .map(application -> {
+                List<String> skills = applicationSkillRepository.findByApplication(application)
+                    .stream()
+                    .map(skill -> skill.getSkill().getSkillName().name())
+                    .toList();
+
+                return ApplicationResponseDto.builder()
+                    .applicationId(application.getId())
+                    .name(application.getName())
+                    .field(FieldName.fromDatabaseValueForInt(application.getFieldId())
+                        .getFieldDisplayName())
+                    .position(PositionName.fromDatabaseValueForInt(application.getPositionId())
+                        .getPositionDisplayName())
+                    .skills(skills)
+                    .build();
+            }).toList();
+    }
+
 }
