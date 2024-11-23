@@ -1,5 +1,7 @@
 package com.example.back.teamate.service;
 
+import com.example.back.teamate.enums.MatchStatus;
+import com.example.back.teamate.repository.MatchRepository;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
@@ -57,6 +59,7 @@ public class PostService {
     private final PostSkillRepository postSkillRepository;
     private final RoleRepository roleRepository;
     private final UsersRepository usersRepository;
+    private final MatchRepository matchRepository;
 
     // 게시글 생성
     public Long createPost(Long userId, PostRequestDto postRequestDto) {
@@ -266,11 +269,42 @@ public class PostService {
         return fieldRepository.findByFieldId(fieldId)
             .orElseThrow(() -> new IllegalArgumentException("Field not found with ID: " + fieldId));
     }
+    public List<PostListResponseDto> getPostsByRole(Long userId, TeamRole teamRole, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
+        // 1. Role 테이블에서 userId로 역할(Role) 조회
+        List<Role> roles = roleRepository.findByUser_IdAndTeamRole(userId, teamRole);
+
+        // 2. 역할을 가진 Role의 게시물(Post) 조회
+        List<Post> posts = roles.stream()
+            .flatMap(role -> role.getPosts().stream())
+            .toList();
+
+        // 3. DTO로 변환
+        return posts.stream().map(post -> {
+            Field field = fieldRepository.findByFieldId(post.getFieldId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid field id: " + post.getFieldId()));
+
+            return PostListResponseDto.builder()
+                .postId(post.getPostId())
+                .title(post.getTitle())
+                .field(field.getFieldName()) // FieldName을 변환
+                .deadline(post.getDeadline().toString())
+                .currentMembers(getCurrentMembers(post.getPostId())) // 현재 인원 가져오기
+                .totalMembers(post.getTotalMembers())
+                .build();
+            }).collect(Collectors.toList());
+        }
     private Mode getModeById(int modeId) {
         return modeRepository.findByModeId(modeId)
             .orElseThrow(() -> new IllegalArgumentException("Mode not found with ID: " + modeId));
     }
+
+        //현재 멤버 몇명인지 확인
+    private int getCurrentMembers(Long postId) {
+        return matchRepository.countByPostIdAndMatchStatus(postId, MatchStatus.ACCEPTED);
+    }
+}
 
     private PostListResponseDto convertToPostListResponseDto(Post post) {
         List<PositionName> positions = postPositionRepository.findByPost_PostId(post.getPostId()).stream()

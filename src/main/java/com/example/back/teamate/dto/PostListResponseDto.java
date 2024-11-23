@@ -19,6 +19,8 @@ public class PostListResponseDto {
 	private List<PositionName> position;
 	private String deadline;
 	private AuthorInfo author;        // 작성자 정보
+	private int currentMembers;      // 현재 인원
+	private int totalMembers;        // 총 인원
 
 	@Builder
 	@Data

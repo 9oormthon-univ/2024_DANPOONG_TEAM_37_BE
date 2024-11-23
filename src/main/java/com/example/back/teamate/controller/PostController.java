@@ -7,6 +7,7 @@ import com.example.back.teamate.dto.PostFilterRequestDto;
 import com.example.back.teamate.dto.PostListResponseDto;
 import com.example.back.teamate.dto.PostRequestDto;
 import com.example.back.teamate.dto.RedisUserInfoDto;
+import com.example.back.teamate.enums.TeamRole;
 import com.example.back.teamate.service.ApplicationService;
 import com.example.back.teamate.service.PostService;
 import com.example.back.teamate.service.TokenAuthenticationService;
@@ -69,6 +70,29 @@ public class PostController {
         //팀장인지 권한 확인
         List<ApplicationResponseDto> applications = applicationService.getApplicationsByPostId(userInfo.getId(),postId);
         return ResponseEntity.ok(ApiResponse.createSuccess(applications));
+    }
+
+    @GetMapping("/posts")
+    public ResponseEntity<ApiResponse<Map<String, List<PostListResponseDto>>>> getUserPosts(
+        @RequestHeader("Authorization") String authHeader,
+        @RequestParam(value = "page", defaultValue = "0") int page,
+        @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        // 사용자 인증 및 userId 가져오기
+        RedisUserInfoDto userInfo = tokenAuthenticationService.authenticateUser(authHeader);
+        Long userId = userInfo.getId();
+
+        // 팀장/팀원의 게시물 조회
+        List<PostListResponseDto> leaderPosts = postService.getPostsByRole(userId, TeamRole.TEAM_LEADER, page, size);
+        List<PostListResponseDto> memberPosts = postService.getPostsByRole(userId, TeamRole.TEAM_MEMBER, page, size);
+
+        // 결과 합치기
+        Map<String, List<PostListResponseDto>> result = Map.of(
+            "leaderPosts", leaderPosts,
+            "memberPosts", memberPosts
+        );
+
+        return ResponseEntity.ok(ApiResponse.createSuccess(result));
     }
 
     @PutMapping("/{postId}")
