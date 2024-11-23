@@ -44,11 +44,8 @@ public class PostRequestDto {
 
     @Getter
     @Setter
-    public static class PositionRequestDto { //포지션과 기술스택
-        @NotBlank(message = "Position is required.")
+    public static class PositionRequestDto implements PositionRequest {
         private String position;
-
-        @NotEmpty(message = "Skills are required.")
         private List<String> skills;
     }
 }

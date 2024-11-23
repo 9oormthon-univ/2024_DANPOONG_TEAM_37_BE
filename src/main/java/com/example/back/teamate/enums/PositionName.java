@@ -1,5 +1,7 @@
 package com.example.back.teamate.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum PositionName {
     FRONTEND(1, "프론트엔드"),
     BACKEND(2, "백엔드"),
@@ -29,7 +31,7 @@ public enum PositionName {
 
     public static PositionName fromDatabaseValue(String value) {
         for (PositionName positionName : PositionName.values()) {
-            if (positionName.getPositionDisplayName().equalsIgnoreCase(value)) {
+            if (positionName.name().equalsIgnoreCase(value)) {
                 return positionName;
             }
         }
